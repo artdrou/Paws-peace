@@ -13,13 +13,15 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
 
 import { CATS, buttonLabel, sinceLabel } from './src/cats';
 import { COLORS, darken } from './src/theme';
-import { confirm, getStatus, toggle } from './src/api';
-import { getCat, setCat, getPushToken } from './src/storage';
-import { setupChannels, registerForPush, collapseNotifications } from './src/notifications';
+import { confirm, getStatus, setAccessCode, toggle } from './src/api';
+import { getCat, setCat, getPushToken, getStoredAccessCode, storeAccessCode } from './src/storage';
+import { setupChannels, registerForPush, collapseNotifications, onNotificationReceived } from './src/notifications';
+import { NEEDS_ACCESS_CODE } from './src/config';
+import { AccessCodeScreen } from './src/AccessCodeScreen';
+import { PushBanner } from './src/PushBanner';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
 import { SettingsScreen } from './src/SettingsScreen';
@@ -41,6 +43,8 @@ const UNDO_DELAY = 5000; // délai avant l'envoi des notifs, pour pouvoir annule
 const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {
+  // web app : code d'accès requis (undefined = chargement) ; app Android : jamais
+  const [access, setAccess] = useState(NEEDS_ACCESS_CODE ? undefined : true);
   const [cat, setCatState] = useState(undefined); // undefined = chargement, null = pas encore choisi
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -53,7 +57,23 @@ export default function App() {
     setupChannels().catch(() => {});
     preloadFeedback();
     getCat().then((c) => setCatState(c ?? null));
+    if (NEEDS_ACCESS_CODE) {
+      getStoredAccessCode().then((code) => {
+        setAccessCode(code);
+        setAccess(!!code);
+      });
+    }
   }, []);
+
+  // web app : code changé côté serveur -> on le redemande
+  const onAuthError = (e) => {
+    if (NEEDS_ACCESS_CODE && e?.status === 401) {
+      storeAccessCode(null);
+      setAccess(false);
+      return true;
+    }
+    return false;
+  };
 
   const refresh = useCallback(async () => {
     try {
@@ -62,25 +82,25 @@ export default function App() {
       setStatus(s);
       setError(null);
       refreshWidgets(s).catch(() => {});
-    } catch {
-      setError('Impossible de joindre le serveur');
+    } catch (e) {
+      if (!onAuthError(e)) setError('Impossible de joindre le serveur');
     }
   }, []);
 
   useEffect(() => {
-    if (!cat) return;
+    if (!cat || !access) return;
     registerForPush(cat).catch((e) => setError(e.message));
     refresh();
     const appSub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
-    const notifSub = Notifications.addNotificationReceivedListener(() => {
+    const stopNotif = onNotificationReceived(() => {
       refresh();
       setTimeout(() => collapseNotifications().catch(() => {}), 1500);
     });
     return () => {
       appSub.remove();
-      notifSub.remove();
+      stopNotif();
     };
-  }, [cat, refresh]);
+  }, [cat, access, refresh]);
 
   // Appui sur le bouton : la bascule part tout de suite au serveur, qui attend UNDO_DELAY
   // avant d'envoyer les notifs (comme ça elles partent même si on quitte l'app).
@@ -201,7 +221,8 @@ export default function App() {
     refreshWidgets().catch(() => {});
   };
 
-  if (cat === undefined) return null;
+  if (cat === undefined || access === undefined) return null;
+  if (!access) return <AccessCodeScreen onDone={() => setAccess(true)} />;
   if (!cat) return <ChooseScreen onChoose={choose} />;
 
   const me = CATS[cat];
@@ -223,6 +244,8 @@ export default function App() {
       <Pressable onPress={() => setShowSettings(true)} hitSlop={16} style={styles.gear}>
         {({ pressed }) => <Image source={GEAR} style={[styles.gearIcon, { tintColor: t.link, opacity: pressed ? 0.6 : 1 }]} />}
       </Pressable>
+
+      <PushBanner t={t} cat={cat} />
 
       <View style={[styles.card, { backgroundColor: t.card }]}>
         {status ? (

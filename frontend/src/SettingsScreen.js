@@ -56,6 +56,7 @@ function SettingRow({ t, label, value, onChange }) {
         onValueChange={onChange}
         trackColor={{ false: COLORS.switchTrackOff, true: t.primary }}
         thumbColor={value ? COLORS.switchThumbOn : COLORS.switchThumbOff}
+        activeThumbColor={COLORS.switchThumbOn} // web : couleur du rond activé
         ios_backgroundColor={COLORS.switchTrackOff}
       />
     </Pressable>

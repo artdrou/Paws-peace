@@ -67,6 +67,15 @@
     "owner": "drouart",
     "updates": {
       "url": "https://u.expo.dev/31833205-bfd0-42a9-85e5-1ac94fb737ac"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Paws Peace",
+      "shortName": "Paws Peace",
+      "lang": "fr",
+      "themeColor": "#FAF7F2",
+      "backgroundColor": "#FAF7F2"
     }
   }
 }

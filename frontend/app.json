@@ -6,8 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.pawspeace.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.pawspeace.app"
     },
     "plugins": [
       "expo-notifications",
@@ -29,11 +28,6 @@
           ]
         }
       ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "REMPLI-AUTOMATIQUEMENT-PAR-eas-init"
-      }
-    }
+    ]
   }
 }

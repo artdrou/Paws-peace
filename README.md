@@ -29,15 +29,15 @@ Un widget pour l'écran d'accueil reprend l'essentiel de l'application : le stat
 
 Le dépôt contient deux parties.
 
-`server/` est un petit serveur Node.js (Express) avec une base PostgreSQL, hébergé sur Railway. Il garde l'état des deux chats, connaît les téléphones inscrits et envoie les notifications via le service de push d'Expo. Les requêtes sont protégées par une clé partagée entre l'application et le serveur.
+`backend/` est un petit serveur Node.js (Express) avec une base PostgreSQL, hébergé sur Railway. Il garde l'état des deux chats, connaît les téléphones inscrits et envoie les notifications via le service de push d'Expo. Les requêtes sont protégées par une clé partagée entre l'application et le serveur.
 
-`app/` est l'application mobile, écrite en React Native avec Expo. Le widget utilise la bibliothèque `react-native-android-widget`. L'application est distribuée sous forme d'APK, construit avec EAS Build, et installée directement sur les quatre téléphones.
+`frontend/` est l'application mobile, écrite en React Native avec Expo. Le widget utilise la bibliothèque `react-native-android-widget`. L'application est distribuée sous forme d'APK, construit avec EAS Build, et installée directement sur les quatre téléphones.
 
 ## Mise en route
 
-1. Déployer `server/` sur Railway avec une base PostgreSQL et la variable `APP_KEY`.
+1. Déployer `backend/` sur Railway avec une base PostgreSQL et la variable `APP_KEY`.
 2. Créer un projet Firebase pour obtenir `google-services.json` et la clé FCM utilisée par Expo Push.
-3. Renseigner l'URL du serveur et la clé dans `app/src/config.js`.
+3. Renseigner l'URL du serveur et la clé dans `frontend/src/config.js`.
 4. Construire l'APK avec `eas build -p android --profile preview` et l'envoyer aux autres.
 
 ## Limites connues

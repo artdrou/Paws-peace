@@ -87,7 +87,10 @@ async function notify(cat, outside, status, senderToken) {
   const c = CATS[cat];
   const o = CATS[OTHER[cat]];
   const otherOutside = status[OTHER[cat]].outside;
-  const bothOut = status.nara.outside && status.leon.outside;
+  // alerte seulement pour le chat sorti en dernier (avec les notifs différées,
+  // les deux envois peuvent voir les deux chats dehors)
+  const bothOut =
+    status.nara.outside && status.leon.outside && new Date(status[OTHER[cat]].updatedAt) <= new Date(status[cat].updatedAt);
   const messages = [];
 
   if (outside && bothOut) {
@@ -158,26 +161,72 @@ app.post('/register', async (req, res, next) => {
   }
 });
 
-// Inverse l'état du chat (dehors <-> dedans) et prévient les autres
+// Bascules en attente de notif, par chat : { timer, eventId, prevUpdatedAt, fire }.
+// Le délai est géré ici (et pas dans l'app) pour que la notif parte même si
+// l'app est quittée ou tuée pendant le délai d'annulation.
+const pending = new Map();
+const MAX_DELAY = 10000;
+
+// Inverse l'état du chat (dehors <-> dedans) et prévient les autres.
+// Avec `delay` (ms), les notifs partent après ce délai ; une nouvelle bascule
+// du même chat pendant ce délai annule la première (état, historique, notifs).
 app.post('/toggle', async (req, res, next) => {
   try {
-    const { cat, pushToken } = req.body || {};
+    const { cat, pushToken, delay } = req.body || {};
     if (!CATS[cat]) return res.status(400).json({ error: 'cat invalide' });
+
+    const p = pending.get(cat);
+    if (p) {
+      clearTimeout(p.timer);
+      pending.delete(cat);
+      await pool.query('DELETE FROM events WHERE id = $1', [p.eventId]);
+      await pool.query('UPDATE cats SET outside = NOT outside, updated_at = $2 WHERE name = $1', [cat, p.prevUpdatedAt]);
+      return res.json(await getStatus());
+    }
 
     // Bascule + ajout dans l'historique en une seule requête (atomique)
     const { rows } = await pool.query(
-      `WITH u AS (
+      `WITH old AS (SELECT updated_at FROM cats WHERE name = $1),
+       u AS (
          UPDATE cats SET outside = NOT outside, updated_at = now() WHERE name = $1
          RETURNING name, outside, updated_at
        )
        INSERT INTO events (cat, outside, at) SELECT name, outside, updated_at FROM u
-       RETURNING outside`,
+       RETURNING id, outside, (SELECT updated_at FROM old) AS prev_updated_at`,
       [cat]
     );
+    const { id, outside, prev_updated_at: prevUpdatedAt } = rows[0];
     const status = await getStatus();
     res.json(status); // on répond tout de suite, les notifs partent ensuite
 
-    notify(cat, rows[0].outside, status, pushToken).catch((err) => console.error('notify', err));
+    const send = (st) => notify(cat, outside, st, pushToken).catch((err) => console.error('notify', err));
+    const ms = Math.min(Math.max(Number(delay) || 0, 0), MAX_DELAY);
+    if (!ms) return send(status);
+    const fire = async () => {
+      pending.delete(cat);
+      try {
+        send(await getStatus()); // état à jour au moment de l'envoi (l'autre chat a pu bouger)
+      } catch (err) {
+        console.error('notify', err);
+      }
+    };
+    pending.set(cat, { timer: setTimeout(fire, ms), eventId: id, prevUpdatedAt, fire });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Envoie tout de suite les notifs d'une bascule en attente (bouton « Confirmer »)
+app.post('/confirm', async (req, res, next) => {
+  try {
+    const { cat } = req.body || {};
+    if (!CATS[cat]) return res.status(400).json({ error: 'cat invalide' });
+    const p = pending.get(cat);
+    if (p) {
+      clearTimeout(p.timer);
+      p.fire();
+    }
+    res.json(await getStatus());
   } catch (e) {
     next(e);
   }

@@ -28,6 +28,12 @@
           ]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "31833205-bfd0-42a9-85e5-1ac94fb737ac"
+      }
+    },
+    "owner": "drouart"
   }
 }

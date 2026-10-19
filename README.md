@@ -37,7 +37,7 @@ Le dépôt contient deux parties.
 
 1. Déployer `backend/` sur Railway avec une base PostgreSQL et la variable `APP_KEY`.
 2. Créer un projet Firebase pour obtenir `google-services.json` et la clé FCM utilisée par Expo Push.
-3. Renseigner l'URL du serveur et la clé dans `frontend/src/config.js`.
+3. Renseigner `EXPO_PUBLIC_API_URL` et `EXPO_PUBLIC_APP_KEY` dans `frontend/.env` (et dans les variables d'environnement EAS pour le build).
 4. Construire l'APK avec `eas build -p android --profile preview` et l'envoyer aux autres.
 
 ## Limites connues

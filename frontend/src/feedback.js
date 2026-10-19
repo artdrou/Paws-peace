@@ -8,21 +8,19 @@ import { HAPTIC_PATTERNS } from './haptic-patterns';
 
 const SOUNDS = {
   sortie: require('../assets/sounds/miaou_sortie.wav'),
-  rentree: require('../assets/sounds/miaou_rentree.wav'),
   bagarre: require('../assets/sounds/bagarre.wav'),
 };
+const SOUND_OF = { rentree: 'sortie' }; // la rentrée utilise le même miaulement que la sortie
 const STYLES = { 1: Haptics.ImpactFeedbackStyle.Light, 2: Haptics.ImpactFeedbackStyle.Medium, 3: Haptics.ImpactFeedbackStyle.Heavy };
 const AUDIO_LATENCY = 40; // ms : le son démarre un peu après l'appel à play()
 
-const players = {};
+const uris = {};
 let loading = null;
 let timers = [];
 
 // À appeler au démarrage de l'app. Dans l'APK, un son embarqué n'a pas d'adresse
-// de fichier utilisable par le lecteur : on le copie d'abord en fichier local
-// (downloadAsync), puis on crée le lecteur, qui doit avoir fini de charger avant
-// de pouvoir jouer. Pas fait à l'import, car ce module est aussi chargé par la
-// tâche du widget, qui n'a pas besoin de son.
+// de fichier utilisable par le lecteur : on le copie d'abord en fichier local.
+// Pas fait à l'import, car ce module est aussi chargé par la tâche du widget.
 export function preloadFeedback() {
   loading ??= (async () => {
     // playsInSilentMode : sinon expo-audio ignore play() quand le téléphone est en vibreur/silencieux.
@@ -32,7 +30,7 @@ export function preloadFeedback() {
       try {
         const asset = Asset.fromModule(source);
         await asset.downloadAsync();
-        players[name] = createAudioPlayer({ uri: asset.localUri ?? asset.uri });
+        uris[name] = asset.localUri ?? asset.uri;
       } catch (e) {
         console.warn(`[son] chargement de ${name} impossible`, e);
       }
@@ -41,28 +39,28 @@ export function preloadFeedback() {
   return loading;
 }
 
-function playSound(player) {
-  // Après une première lecture le lecteur est « terminé » : il faut que le retour
-  // au début soit effectif avant play(), sinon play() ne fait rien.
-  const start = async () => {
-    player.volume = 1;
-    await player.seekTo(0).catch(() => {});
-    player.play();
+// Un lecteur neuf par son, libéré à la fin : un lecteur déjà joué une fois
+// ne repartait pas (relecture ignorée après la fin du son).
+function playSound(uri) {
+  const player = createAudioPlayer({ uri });
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    sub.remove();
+    player.remove();
   };
-  if (player.isLoaded) return start();
-  const sub = player.addListener('playbackStatusUpdate', (s) => {
-    if (s.isLoaded) {
-      sub.remove();
-      start();
-    }
-  });
+  const sub = player.addListener('playbackStatusUpdate', (s) => s.didJustFinish && release());
+  setTimeout(release, 10000); // filet de sécurité si la fin n'est jamais signalée
+  player.play();
 }
 
-export function playFeedback(name) {
+export function playFeedback(event) {
+  const name = SOUND_OF[event] ?? event;
   timers.forEach(clearTimeout);
   timers = [];
   preloadFeedback()
-    .then(() => players[name] && playSound(players[name]))
+    .then(() => uris[name] && playSound(uris[name]))
     .catch((e) => console.warn(`[son] lecture de ${name} impossible`, e));
   timers = HAPTIC_PATTERNS[name].map(([t, level]) =>
     setTimeout(() => Haptics.impactAsync(STYLES[level]).catch(() => {}), t + AUDIO_LATENCY)

@@ -111,8 +111,8 @@ async function notify(cat, outside, status, senderToken) {
     const title = outside ? `🐈 ${c.name} est ${c.sorti}` : `🏠 ${c.name} est ${c.rentre}`;
     const body = otherOutside ? `${o.name} est dehors en ce moment.` : `${o.name} est à l'intérieur.`;
     // canal Android (et donc son) selon sortie/rentrée, voir setupChannels côté app
-    const channelId = outside ? 'sortie' : 'rentree';
-    const sound = outside ? 'miaou_sortie.wav' : 'miaou_rentree.wav';
+    const channelId = outside ? 'sortie' : 'rentree_miaou';
+    const sound = 'miaou_sortie.wav'; // même miaulement pour sortie et rentrée
     for (const to of others) {
       messages.push({ to, channelId, sound, priority: 'high', title, body, data: { type: 'move', cat, outside } });
     }

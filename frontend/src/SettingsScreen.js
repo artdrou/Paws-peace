@@ -31,7 +31,6 @@ export function SettingsScreen({ t, onClose, wallpaper }) {
         <SettingRow
           t={t}
           label="Sons"
-          hint="Miaulement et bagarre dans l'app"
           value={settings.sound}
           onChange={(sound) => updateSettings({ sound })}
         />
@@ -39,27 +38,19 @@ export function SettingsScreen({ t, onClose, wallpaper }) {
         <SettingRow
           t={t}
           label="Vibrations"
-          hint="Retour haptique calé sur les sons"
           value={settings.haptics}
           onChange={(haptics) => updateSettings({ haptics })}
         />
       </View>
-
-      <Text style={[styles.note, { color: t.muted }]}>
-        Les notifications gardent leurs propres sons et vibrations, réglables dans les paramètres Android.
-      </Text>
     </View>
   );
 }
 
 // Switch à deux états de couleur : couleur du thème quand activé, gris quand désactivé
-function SettingRow({ t, label, hint, value, onChange }) {
+function SettingRow({ t, label, value, onChange }) {
   return (
     <Pressable onPress={() => onChange(!value)} style={styles.row}>
-      <View style={styles.rowText}>
-        <Text style={[styles.label, { color: t.text }]}>{label}</Text>
-        <Text style={[styles.hint, { color: t.muted }]}>{hint}</Text>
-      </View>
+      <Text style={[styles.label, { color: t.text }]}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onChange}
@@ -80,9 +71,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontWeight: '800', marginTop: 16 },
   card: { borderRadius: 28, paddingHorizontal: 20, paddingVertical: 8, ...shadow },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
-  rowText: { flex: 1, marginRight: 12 },
-  label: { fontSize: 18, fontWeight: '700' },
-  hint: { fontSize: 14, marginTop: 2 },
+  label: { flex: 1, fontSize: 18, fontWeight: '700' },
   sep: { height: 2, borderRadius: 1 },
-  note: { fontSize: 13, marginTop: 16, textAlign: 'center', paddingHorizontal: 12 },
 });

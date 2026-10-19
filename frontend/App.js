@@ -8,6 +8,8 @@ import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 
+const PAWS = require('./assets/paws.png');
+
 export default function App() {
   const [cat, setCatState] = useState(undefined); // undefined = chargement, null = pas encore choisi
   const [status, setStatus] = useState(null);
@@ -80,6 +82,7 @@ export default function App() {
   return (
     <View style={[styles.screen, { backgroundColor: t.bg }]}>
       <StatusBar barStyle="dark-content" backgroundColor={t.bg} />
+      <Wallpaper color={t.soft} />
 
       <View style={[styles.card, { backgroundColor: t.card }]}>
         {status ? (
@@ -138,6 +141,11 @@ export default function App() {
   );
 }
 
+// Papier peint de pattes : une tuile répétée, teintée selon le thème
+function Wallpaper({ color }) {
+  return <Image source={PAWS} resizeMode="repeat" style={[StyleSheet.absoluteFill, { tintColor: color }]} />;
+}
+
 // Une ligne « tête + nom + pastille dehors/dedans »
 function CatRow({ c, state, t, size, big }) {
   const out = !!state?.outside;
@@ -160,6 +168,7 @@ function ChooseScreen({ onChoose }) {
   return (
     <View style={[styles.screen, { backgroundColor: '#FAF7F2' }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAF7F2" />
+      <Wallpaper color="#EFE6DA" />
       <Text style={styles.chooseTitle}>Quel est ton chat ?</Text>
       {Object.values(CATS).map((c) => (
         <Pressable

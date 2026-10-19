@@ -38,6 +38,14 @@ async function initDb() {
       cat TEXT NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`);
+  // Historique des sorties/rentrées, pour les stats (pas utilisé par l'app)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS events (
+      id SERIAL PRIMARY KEY,
+      cat TEXT NOT NULL,
+      outside BOOLEAN NOT NULL,
+      at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`);
   await pool.query(`INSERT INTO cats (name) VALUES ('nara'), ('leon') ON CONFLICT DO NOTHING`);
 }
 
@@ -153,8 +161,14 @@ app.post('/toggle', async (req, res, next) => {
     const { cat, pushToken } = req.body || {};
     if (!CATS[cat]) return res.status(400).json({ error: 'cat invalide' });
 
+    // Bascule + ajout dans l'historique en une seule requête (atomique)
     const { rows } = await pool.query(
-      'UPDATE cats SET outside = NOT outside, updated_at = now() WHERE name = $1 RETURNING outside',
+      `WITH u AS (
+         UPDATE cats SET outside = NOT outside, updated_at = now() WHERE name = $1
+         RETURNING name, outside, updated_at
+       )
+       INSERT INTO events (cat, outside, at) SELECT name, outside, updated_at FROM u
+       RETURNING outside`,
       [cat]
     );
     const status = await getStatus();

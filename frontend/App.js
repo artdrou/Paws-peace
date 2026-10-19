@@ -16,14 +16,16 @@ import {
 import * as Notifications from 'expo-notifications';
 
 import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel, darken } from './src/cats';
-import { getStatus, toggle } from './src/api';
+import { confirm, getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
-import { setupChannels, registerForPush } from './src/notifications';
+import { setupChannels, registerForPush, collapseNotifications } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
+import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
-const UNDO_DELAY = 10000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
+const UNDO_DELAY = 5000;
+const CONFIRM = '#A3E635'; // vert lime du bouton « Confirmer » // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
 const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {
@@ -35,12 +37,14 @@ export default function App() {
 
   useEffect(() => {
     setupChannels().catch(() => {});
+    preloadFeedback();
     getCat().then((c) => setCatState(c ?? null));
   }, []);
 
   const refresh = useCallback(async () => {
     try {
       const s = await getStatus();
+      if (pendingRef.current) return; // pendant le délai, on garde l'affichage d'avant l'appui
       setStatus(s);
       setError(null);
       refreshWidgets(s).catch(() => {});
@@ -54,69 +58,124 @@ export default function App() {
     registerForPush(cat).catch((e) => setError(e.message));
     refresh();
     const appSub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
-    const notifSub = Notifications.addNotificationReceivedListener(() => refresh());
+    const notifSub = Notifications.addNotificationReceivedListener(() => {
+      refresh();
+      setTimeout(() => collapseNotifications().catch(() => {}), 1500);
+    });
     return () => {
       appSub.remove();
       notifSub.remove();
     };
   }, [cat, refresh]);
 
-  const bothOut = !!(status?.nara?.outside && status?.leon?.outside);
-  useEffect(() => {
-    if (!bothOut) setAlarmDismissed(false);
-  }, [bothOut]);
-
-  // Appui sur le bouton : on attend UNDO_DELAY (barre qui se remplit) avant d'envoyer.
-  // Un second appui pendant ce temps annule ; si l'app passe en arrière-plan, on envoie tout de suite.
+  // Appui sur le bouton : la bascule part tout de suite au serveur, qui attend UNDO_DELAY
+  // avant d'envoyer les notifs (comme ça elles partent même si on quitte l'app).
+  // Pendant ce délai : la barre se remplit, un second appui annule, « Confirmer » envoie tout de suite.
+  // L'affichage garde l'état d'avant l'appui jusqu'à la fin du délai.
   const [pending, setPending] = useState(false);
+  const [remaining, setRemaining] = useState(0); // secondes avant l'envoi, pour le compte à rebours
   const progress = useRef(new Animated.Value(0)).current;
-  const commitRef = useRef(null);
+  const pendingRef = useRef(false);
+  const requestRef = useRef(null); // requête /toggle de l'appui en cours
+  const resultRef = useRef(null); // état renvoyé par le serveur, affiché à la fin du délai
+  const finishRef = useRef(null);
+  pendingRef.current = pending;
 
-  const cancelPending = () => {
+  const stopPending = () => {
     progress.stopAnimation();
     progress.setValue(0);
     setPending(false);
   };
 
-  commitRef.current = () => {
-    cancelPending();
-    onToggle();
+  // Fin du délai (ou app quittée) : le serveur envoie les notifs de lui-même
+  finishRef.current = () => {
+    stopPending();
+    const req = requestRef.current;
+    requestRef.current = null;
+    if (resultRef.current) setStatus(resultRef.current);
+    else req?.then((s) => s && setStatus(s));
   };
 
+  // Annuler ou confirmer, une fois la requête de l'appui arrivée au serveur
+  const followUp = (action) => {
+    const req = requestRef.current ?? Promise.resolve(null);
+    requestRef.current = null;
+    stopPending();
+    setBusy(true);
+    req
+      .then((sent) => sent && action())
+      .then((s) => {
+        if (!s) return;
+        setStatus(s);
+        setError(null);
+        refreshWidgets(s).catch(() => {});
+      })
+      .catch(() => {
+        setError('Impossible de joindre le serveur');
+        refresh();
+      })
+      .finally(() => setBusy(false));
+  };
+  const cancelPress = () => followUp(async () => toggle(cat, await getPushToken(), UNDO_DELAY)); // 2e bascule = annulation
+  const confirmPress = () => followUp(() => confirm(cat));
+
+  // Les deux chats dehors : l'alerte s'affiche dès l'appui, sans attendre la fin du délai
+  // (seule la notif aux autres attend)
+  const mineOutside = pending ? !status?.[cat]?.outside : !!status?.[cat]?.outside;
+  const otherOutside = !!(cat && status?.[CATS[cat].other]?.outside);
+  const bothOut = mineOutside && otherOutside;
+  useEffect(() => {
+    if (!bothOut) setAlarmDismissed(false);
+  }, [bothOut]);
+
+  const alarmVisible = bothOut && !alarmDismissed;
+  useEffect(() => {
+    if (alarmVisible) playFeedback('bagarre');
+  }, [alarmVisible]);
+
   const onPress = () => {
-    if (pending) return cancelPending();
+    if (pending) return cancelPress();
+    const goingOut = !status?.[cat]?.outside;
+    // si ça déclenche l'alerte, c'est le son de bagarre qui joue (via alarmVisible)
+    if (!(goingOut && otherOutside)) playFeedback(goingOut ? 'sortie' : 'rentree');
+    setRemaining(UNDO_DELAY / 1000);
     setPending(true);
+    resultRef.current = null;
+    requestRef.current = getPushToken()
+      .then((token) => toggle(cat, token, UNDO_DELAY))
+      .then((s) => {
+        resultRef.current = s;
+        setError(null);
+        refreshWidgets(s).catch(() => {});
+        return s;
+      })
+      .catch(() => {
+        stopPending();
+        setError('Impossible de joindre le serveur');
+        refresh();
+        return null;
+      });
     progress.setValue(0);
     Animated.timing(progress, { toValue: 1, duration: UNDO_DELAY, easing: Easing.linear, useNativeDriver: false }).start(
-      ({ finished }) => finished && commitRef.current()
+      ({ finished }) => finished && finishRef.current()
     );
   };
 
   useEffect(() => {
     if (!pending) return;
-    const sub = AppState.addEventListener('change', (s) => s !== 'active' && commitRef.current());
-    return () => sub.remove();
+    const sub = AppState.addEventListener('change', (s) => s !== 'active' && finishRef.current());
+    const id = progress.addListener(({ value }) => setRemaining(Math.max(1, Math.ceil(((1 - value) * UNDO_DELAY) / 1000))));
+    return () => {
+      sub.remove();
+      progress.removeListener(id);
+    };
   }, [pending]);
 
   const choose = async (c) => {
-    cancelPending();
+    if (pendingRef.current) finishRef.current();
     await setCat(c);
     setCatState(c);
     refreshWidgets().catch(() => {});
-  };
-
-  const onToggle = async () => {
-    setBusy(true);
-    try {
-      const s = await toggle(cat, await getPushToken());
-      setStatus(s);
-      setError(null);
-      refreshWidgets(s).catch(() => {});
-    } catch {
-      setError('Impossible de joindre le serveur');
-    } finally {
-      setBusy(false);
-    }
   };
 
   if (cat === undefined) return null;
@@ -173,10 +232,23 @@ export default function App() {
           <>
             <Image source={me.head} style={styles.buttonHead} />
             <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
-            {pending && <Text style={[styles.buttonHint, { color: t.onPrimary }]}>Appuie pour annuler</Text>}
+            {pending && (
+              <Text style={[styles.buttonHint, { color: t.onPrimary }]}>
+                Les autres seront prévenus dans {remaining} s · appuie pour annuler
+              </Text>
+            )}
           </>
         )}
       </Pressable>
+
+      {pending && (
+        <Pressable
+          onPress={confirmPress}
+          style={({ pressed }) => [styles.confirm, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+        >
+          <Text style={styles.confirmText}>Confirmer</Text>
+        </Pressable>
+      )}
 
       {error && <Text style={[styles.error, { color: ALERT }]}>{error}</Text>}
 
@@ -189,7 +261,7 @@ export default function App() {
         </Pressable>
       </View>
 
-      <Modal visible={bothOut && !alarmDismissed} transparent animationType="fade">
+      <Modal visible={alarmVisible} transparent animationType="fade">
         <View style={styles.backdrop}>
           <View style={styles.alarm}>
             <View style={styles.alarmHeads}>
@@ -300,9 +372,19 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   buttonProgress: { position: 'absolute', left: 0, top: 0, bottom: 0 },
-  buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.8 },
+  buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.85, textAlign: 'center', paddingHorizontal: 16 },
   buttonHead: { width: 72, height: 72, marginBottom: 10 },
   buttonText: { fontSize: 22, fontWeight: '800' },
+  confirm: {
+    marginTop: 12,
+    alignSelf: 'center',
+    backgroundColor: CONFIRM,
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    ...shadow,
+  },
+  confirmText: { color: '#1A2E05', fontSize: 17, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },
   switch: { marginTop: 32, alignItems: 'center' },
   switchText: { textAlign: 'center' },

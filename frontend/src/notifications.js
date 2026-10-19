@@ -40,7 +40,6 @@ export async function setupChannels() {
   await Notifications.setNotificationChannelAsync('alert', {
     name: 'Alerte bagarre',
     importance: Notifications.AndroidImportance.MAX,
-    sound: 'default',
     vibrationPattern: [0, 600, 250, 600, 250, 600],
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   });

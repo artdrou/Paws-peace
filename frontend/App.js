@@ -93,7 +93,7 @@ export default function App() {
             <CatRow c={me} state={mine} t={t} size={44} />
           </>
         ) : (
-          <ActivityIndicator color={t.primary} />
+          <ActivityIndicator color={t.link} />
         )}
       </View>
 
@@ -121,7 +121,7 @@ export default function App() {
         <Text style={[styles.switchText, { color: t.muted }]}>Je ne suis pas avec {me.name} ?</Text>
         <Pressable onPress={() => choose(null)} hitSlop={12}>
           {({ pressed }) => (
-            <Text style={[styles.switchLink, { color: t.primary, opacity: pressed ? 0.6 : 1 }]}>Changer de chat</Text>
+            <Text style={[styles.switchLink, { color: t.link, opacity: pressed ? 0.6 : 1 }]}>Changer de chat</Text>
           )}
         </Pressable>
       </View>

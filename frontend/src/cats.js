@@ -6,8 +6,8 @@ export const CATS = {
     sorti: 'sortie',
     rentre: 'rentrée',
     head: require('../assets/nara-head.png'),
-    // fond bleu ciel, bouton bleu-gris
-    theme: { bg: '#DCEEFB', card: '#FFFFFF', soft: '#C6E2F6', primary: '#5E7A8F', onPrimary: '#FFFFFF', text: '#1F3442', muted: '#5D7385' },
+    // fond bleu ciel, bouton jaune soleil (ses yeux), liens bleu-gris
+    theme: { bg: '#DCEEFB', card: '#FFFFFF', soft: '#C6E2F6', primary: '#FFC93C', onPrimary: '#1F3442', link: '#5E7A8F', text: '#1F3442', muted: '#5D7385' },
   },
   leon: {
     key: 'leon',
@@ -16,8 +16,8 @@ export const CATS = {
     sorti: 'sorti',
     rentre: 'rentré',
     head: require('../assets/leon-head.png'),
-    // fond orangé, bouton marron
-    theme: { bg: '#FFE4C7', card: '#FFFFFF', soft: '#FBD2A8', primary: '#8A5A3C', onPrimary: '#FFFFFF', text: '#4A2C17', muted: '#9A6E4E' },
+    // fond orangé, bouton turquoise, liens marron
+    theme: { bg: '#FFE4C7', card: '#FFFFFF', soft: '#FBD2A8', primary: '#2EC4B6', onPrimary: '#0F3B37', link: '#8A5A3C', text: '#4A2C17', muted: '#9A6E4E' },
   },
 };
 

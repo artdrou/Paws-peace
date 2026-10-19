@@ -18,7 +18,7 @@ import * as Notifications from 'expo-notifications';
 import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel, darken } from './src/cats';
 import { confirm, getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
-import { setupChannels, registerForPush } from './src/notifications';
+import { setupChannels, registerForPush, collapseNotifications } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
 import { playFeedback, preloadFeedback } from './src/feedback';
@@ -58,7 +58,10 @@ export default function App() {
     registerForPush(cat).catch((e) => setError(e.message));
     refresh();
     const appSub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
-    const notifSub = Notifications.addNotificationReceivedListener(() => refresh());
+    const notifSub = Notifications.addNotificationReceivedListener(() => {
+      refresh();
+      setTimeout(() => collapseNotifications().catch(() => {}), 1500);
+    });
     return () => {
       appSub.remove();
       notifSub.remove();

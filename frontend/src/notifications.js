@@ -7,13 +7,35 @@ import { refreshWidgets } from './widget/refresh';
 
 export const BG_TASK = 'CATS_BACKGROUND_NOTIFICATION';
 
-// Tâche lancée quand une notif arrive app fermée (messages data-only) :
-// on met juste le widget à jour avec l'état du serveur.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Ne garde que la notif la plus récente par chat (et une seule alerte) :
+// « Nara est sortie / rentrée / sortie » -> il ne reste que la dernière.
+export async function collapseNotifications() {
+  const latest = {};
+  const list = await Notifications.getPresentedNotificationsAsync();
+  for (const n of [...list].sort((a, b) => b.date - a.date)) {
+    const d = n.request.content.data || {};
+    const key = d.type === 'alert' ? 'alert' : d.type === 'move' ? `move-${d.cat}` : null;
+    if (!key) continue;
+    if (latest[key]) await Notifications.dismissNotificationAsync(n.request.identifier);
+    else latest[key] = true;
+  }
+}
+
+// Tâche lancée à la réception du push silencieux envoyé à chaque changement,
+// même app fermée : on met le widget à jour et on regroupe les notifs.
 TaskManager.defineTask(BG_TASK, async () => {
   try {
     await refreshWidgets();
   } catch (e) {
     // pas grave, le widget se rafraîchira au prochain clic / ouverture
+  }
+  try {
+    await sleep(1500); // laisse la notif visible, envoyée en même temps, s'afficher d'abord
+    await collapseNotifications();
+  } catch (e) {
+    // au pire, les anciennes notifs restent affichées
   }
 });
 

@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "android": {
       "package": "com.pawspeace.app",
       "runtimeVersion": {
@@ -12,12 +13,18 @@
       },
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png"
+      }
     },
     "plugins": [
       [
         "expo-notifications",
         {
+          "icon": "./assets/notification-icon.png",
+          "color": "#5E7A8F",
           "sounds": [
             "./assets/sounds/miaou_sortie.wav",
             "./assets/sounds/miaou_rentree.wav",

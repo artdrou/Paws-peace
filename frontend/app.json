@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "com.pawspeace.app"
+      "package": "com.pawspeace.app",
+      "runtimeVersion": {
+        "policy": "fingerprint"
+      }
     },
     "plugins": [
       "expo-notifications",
@@ -34,6 +37,9 @@
         "projectId": "31833205-bfd0-42a9-85e5-1ac94fb737ac"
       }
     },
-    "owner": "drouart"
+    "owner": "drouart",
+    "updates": {
+      "url": "https://u.expo.dev/31833205-bfd0-42a9-85e5-1ac94fb737ac"
+    }
   }
 }

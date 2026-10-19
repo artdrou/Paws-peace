@@ -61,7 +61,7 @@ export function CatWidget({ myCat, status, error, busy }) {
           alignItems: 'center',
         }}
       >
-        <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? ALERT : '#FFFFFF' }} />
+        <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? ALERT : t.onPrimary }} />
       </FlexWidget>
     </FlexWidget>
   );

@@ -5,8 +5,9 @@ export const CATS = {
     other: 'leon',
     sorti: 'sortie',
     rentre: 'rentrée',
-    emoji: '🧡',
-    theme: { bg: '#FFF4EC', card: '#FFFFFF', primary: '#E8743B', text: '#3A2416', muted: '#9A7B68' },
+    head: require('../assets/nara-head.png'),
+    // sauge : gris-jaune-vert
+    theme: { bg: '#F4F5E6', card: '#FFFFFF', soft: '#E7EACB', primary: '#BCC07A', onPrimary: '#33361C', text: '#33361C', muted: '#83866A' },
   },
   leon: {
     key: 'leon',
@@ -14,12 +15,14 @@ export const CATS = {
     other: 'nara',
     sorti: 'sorti',
     rentre: 'rentré',
-    emoji: '💙',
-    theme: { bg: '#EEF4FB', card: '#FFFFFF', primary: '#2F6FB5', text: '#14263A', muted: '#6A7F96' },
+    head: require('../assets/leon-head.png'),
+    // terracotta rosé
+    theme: { bg: '#FBEDE6', card: '#FFFFFF', soft: '#F3D9CD', primary: '#CF8E78', onPrimary: '#45221A', text: '#45221A', muted: '#9A766A' },
   },
 };
 
-export const ALERT = '#D7263D';
+export const ALERT = '#D9434F';
+export const ALERT_SOFT = '#FBE0E2';
 
 export function statusLine(catKey, outside) {
   const c = CATS[catKey];

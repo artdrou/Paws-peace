@@ -120,7 +120,7 @@ async function notify(cat, outside, status, senderToken) {
 
   // Message silencieux (data-only) pour que les widgets se mettent à jour en arrière-plan
   for (const to of others) {
-    messages.push({ to, priority: 'high', data: { type: 'refresh' } });
+    messages.push({ to, priority: 'high', data: { type: 'refresh', cat } }); // cat : l'app ne garde que la dernière notif de ce chat
   }
 
   await sendAll(messages);

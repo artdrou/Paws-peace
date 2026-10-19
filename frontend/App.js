@@ -66,6 +66,7 @@ export default function App() {
   // Appui sur le bouton : on attend UNDO_DELAY (barre qui se remplit) avant d'envoyer.
   // Un second appui pendant ce temps annule ; si l'app passe en arrière-plan, on envoie tout de suite.
   const [pending, setPending] = useState(false);
+  const [remaining, setRemaining] = useState(0); // secondes avant l'envoi, pour le compte à rebours
   const progress = useRef(new Animated.Value(0)).current;
   const commitRef = useRef(null);
 
@@ -101,6 +102,7 @@ export default function App() {
     const goingOut = !status?.[cat]?.outside;
     // si ça déclenche l'alerte, c'est le son de bagarre qui joue (via alarmVisible)
     if (!(goingOut && otherOutside)) playFeedback(goingOut ? 'sortie' : 'rentree');
+    setRemaining(UNDO_DELAY / 1000);
     setPending(true);
     progress.setValue(0);
     Animated.timing(progress, { toValue: 1, duration: UNDO_DELAY, easing: Easing.linear, useNativeDriver: false }).start(
@@ -111,7 +113,11 @@ export default function App() {
   useEffect(() => {
     if (!pending) return;
     const sub = AppState.addEventListener('change', (s) => s !== 'active' && commitRef.current());
-    return () => sub.remove();
+    const id = progress.addListener(({ value }) => setRemaining(Math.max(1, Math.ceil(((1 - value) * UNDO_DELAY) / 1000))));
+    return () => {
+      sub.remove();
+      progress.removeListener(id);
+    };
   }, [pending]);
 
   const choose = async (c) => {
@@ -190,7 +196,11 @@ export default function App() {
           <>
             <Image source={me.head} style={styles.buttonHead} />
             <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
-            {pending && <Text style={[styles.buttonHint, { color: t.onPrimary }]}>Appuie pour annuler</Text>}
+            {pending && (
+              <Text style={[styles.buttonHint, { color: t.onPrimary }]}>
+                Les autres seront prévenus dans {remaining} s · appuie pour annuler
+              </Text>
+            )}
           </>
         )}
       </Pressable>
@@ -317,7 +327,7 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   buttonProgress: { position: 'absolute', left: 0, top: 0, bottom: 0 },
-  buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.8 },
+  buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.85, textAlign: 'center', paddingHorizontal: 16 },
   buttonHead: { width: 72, height: 72, marginBottom: 10 },
   buttonText: { fontSize: 22, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },

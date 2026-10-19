@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Updates from 'expo-updates';
+import { COLORS } from './theme';
 
 // Mises à jour OTA (EAS Update) : expo-updates vérifie et télécharge au lancement,
 // on revérifie au retour au premier plan. Une fois la maj téléchargée, on propose
@@ -42,8 +43,8 @@ export function UpdatePrompt({ color, onColor, textColor }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 28, alignItems: 'center' },
+  backdrop: { flex: 1, backgroundColor: COLORS.backdrop, justifyContent: 'center', padding: 24 },
+  card: { backgroundColor: COLORS.white, borderRadius: 28, padding: 28, alignItems: 'center' },
   title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
   body: { fontSize: 16, textAlign: 'center', marginTop: 10 },
   button: { marginTop: 24, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 32 },

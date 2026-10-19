@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Image, Modal, Pressable, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { CATS, ALERT, ALERT_SOFT, buttonLabel, sinceLabel } from './src/cats';
+import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel } from './src/cats';
 import { getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
@@ -102,7 +102,7 @@ export default function App() {
         disabled={busy || !status}
         style={({ pressed }) => [
           styles.button,
-          { backgroundColor: t.primary, opacity: busy || !status ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+          { backgroundColor: mine?.outside ? OUT_BUTTON : t.primary, opacity: busy || !status ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         ]}
       >
         {busy ? (

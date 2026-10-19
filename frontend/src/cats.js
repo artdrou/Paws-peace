@@ -23,6 +23,7 @@ export const CATS = {
 
 export const ALERT = '#D9434F';
 export const ALERT_SOFT = '#FBE0E2';
+export const OUT_BUTTON = '#EF6F80'; // bouton quand son chat est dehors : rouge rosé
 
 export function statusLine(catKey, outside) {
   const c = CATS[catKey];

@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
-import { CATS, ALERT, statusLine, buttonLabel } from '../cats';
+import { CATS, ALERT, OUT_BUTTON, statusLine, buttonLabel } from '../cats';
 
 const FULL = { height: 'match_parent', width: 'match_parent' };
 
@@ -55,7 +55,7 @@ export function CatWidget({ myCat, status, error, busy }) {
           width: 'match_parent',
           height: 48,
           marginTop: 8,
-          backgroundColor: both ? '#FFFFFF' : t.primary,
+          backgroundColor: both ? '#FFFFFF' : mine ? OUT_BUTTON : t.primary,
           borderRadius: 14,
           justifyContent: 'center',
           alignItems: 'center',

@@ -21,7 +21,7 @@ import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
-import { playFeedback } from './src/feedback';
+import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
 const UNDO_DELAY = 10000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
@@ -36,6 +36,7 @@ export default function App() {
 
   useEffect(() => {
     setupChannels().catch(() => {});
+    preloadFeedback();
     getCat().then((c) => setCatState(c ?? null));
   }, []);
 
@@ -62,16 +63,6 @@ export default function App() {
     };
   }, [cat, refresh]);
 
-  const bothOut = !!(status?.nara?.outside && status?.leon?.outside);
-  useEffect(() => {
-    if (!bothOut) setAlarmDismissed(false);
-  }, [bothOut]);
-
-  const alarmVisible = bothOut && !alarmDismissed;
-  useEffect(() => {
-    if (alarmVisible) playFeedback('bagarre');
-  }, [alarmVisible]);
-
   // Appui sur le bouton : on attend UNDO_DELAY (barre qui se remplit) avant d'envoyer.
   // Un second appui pendant ce temps annule ; si l'app passe en arrière-plan, on envoie tout de suite.
   const [pending, setPending] = useState(false);
@@ -85,13 +76,31 @@ export default function App() {
   };
 
   commitRef.current = () => {
+    // état local mis à jour tout de suite (sinon l'alerte clignoterait pendant l'appel serveur)
+    setStatus((s) => s && { ...s, [cat]: { outside: !s[cat].outside, updatedAt: new Date().toISOString() } });
     cancelPending();
     onToggle();
   };
 
+  // Les deux chats dehors : l'alerte s'affiche dès l'appui, sans attendre la fin du délai
+  // (seule la notif aux autres attend)
+  const mineOutside = pending ? !status?.[cat]?.outside : !!status?.[cat]?.outside;
+  const otherOutside = !!(cat && status?.[CATS[cat].other]?.outside);
+  const bothOut = mineOutside && otherOutside;
+  useEffect(() => {
+    if (!bothOut) setAlarmDismissed(false);
+  }, [bothOut]);
+
+  const alarmVisible = bothOut && !alarmDismissed;
+  useEffect(() => {
+    if (alarmVisible) playFeedback('bagarre');
+  }, [alarmVisible]);
+
   const onPress = () => {
     if (pending) return cancelPending();
-    playFeedback(status?.[cat]?.outside ? 'rentree' : 'sortie');
+    const goingOut = !status?.[cat]?.outside;
+    // si ça déclenche l'alerte, c'est le son de bagarre qui joue (via alarmVisible)
+    if (!(goingOut && otherOutside)) playFeedback(goingOut ? 'sortie' : 'rentree');
     setPending(true);
     progress.setValue(0);
     Animated.timing(progress, { toValue: 1, duration: UNDO_DELAY, easing: Easing.linear, useNativeDriver: false }).start(
@@ -121,6 +130,7 @@ export default function App() {
       refreshWidgets(s).catch(() => {});
     } catch {
       setError('Impossible de joindre le serveur');
+      refresh(); // annule la mise à jour locale
     } finally {
       setBusy(false);
     }

@@ -49,6 +49,14 @@
             }
           ]
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "# WorkManager (utilisé par le widget) : R8 retirait les constructeurs instanciés par réflexion\n-keep class * extends androidx.work.InputMerger { public <init>(); }\n-keep class * extends androidx.work.ListenableWorker { public <init>(android.content.Context, androidx.work.WorkerParameters); }\n-keep class com.reactnativeandroidwidget.** { *; }"
+          }
+        }
       ]
     ],
     "extra": {

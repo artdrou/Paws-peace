@@ -26,7 +26,7 @@ Notifications.setNotificationHandler({
       shouldShowAlert: visible,
       shouldShowBanner: visible,
       shouldShowList: visible,
-      shouldPlaySound: type === 'alert',
+      shouldPlaySound: false, // app ouverte : c'est l'app qui joue le son (src/feedback.js)
       shouldSetBadge: false,
     };
   },

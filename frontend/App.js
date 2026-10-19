@@ -21,6 +21,7 @@ import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
+import { playFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
 const UNDO_DELAY = 10000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
@@ -66,6 +67,11 @@ export default function App() {
     if (!bothOut) setAlarmDismissed(false);
   }, [bothOut]);
 
+  const alarmVisible = bothOut && !alarmDismissed;
+  useEffect(() => {
+    if (alarmVisible) playFeedback('bagarre');
+  }, [alarmVisible]);
+
   // Appui sur le bouton : on attend UNDO_DELAY (barre qui se remplit) avant d'envoyer.
   // Un second appui pendant ce temps annule ; si l'app passe en arrière-plan, on envoie tout de suite.
   const [pending, setPending] = useState(false);
@@ -85,6 +91,7 @@ export default function App() {
 
   const onPress = () => {
     if (pending) return cancelPending();
+    playFeedback(status?.[cat]?.outside ? 'rentree' : 'sortie');
     setPending(true);
     progress.setValue(0);
     Animated.timing(progress, { toValue: 1, duration: UNDO_DELAY, easing: Easing.linear, useNativeDriver: false }).start(
@@ -189,7 +196,7 @@ export default function App() {
         </Pressable>
       </View>
 
-      <Modal visible={bothOut && !alarmDismissed} transparent animationType="fade">
+      <Modal visible={alarmVisible} transparent animationType="fade">
         <View style={styles.backdrop}>
           <View style={styles.alarm}>
             <View style={styles.alarmHeads}>

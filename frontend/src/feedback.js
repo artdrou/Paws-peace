@@ -25,7 +25,9 @@ let timers = [];
 // tâche du widget, qui n'a pas besoin de son.
 export function preloadFeedback() {
   loading ??= (async () => {
-    await setAudioModeAsync({ interruptionMode: 'duckOthers' }).catch(() => {}); // baisse la musique au lieu de la couper
+    // playsInSilentMode : sinon expo-audio ignore play() quand le téléphone est en vibreur/silencieux.
+    // duckOthers : baisse la musique en cours au lieu de la couper.
+    await setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'duckOthers' }).catch(() => {});
     for (const [name, source] of Object.entries(SOUNDS)) {
       try {
         const asset = Asset.fromModule(source);

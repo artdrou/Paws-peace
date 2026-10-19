@@ -1,0 +1,17 @@
+{
+  "name": "paws-peace-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "expo-server-sdk": "^3.10.0",
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  }
+}

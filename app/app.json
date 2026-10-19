@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Paws Peace",
+    "slug": "paws-peace",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.pawspeace.app",
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "expo-notifications",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "CatWidget",
+              "label": "Paws Peace",
+              "description": "Statut des chats et bouton sortie/rentrée",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REMPLI-AUTOMATIQUEMENT-PAR-eas-init"
+      }
+    }
+  }
+}

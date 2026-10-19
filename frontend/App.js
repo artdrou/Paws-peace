@@ -272,7 +272,7 @@ export default function App() {
                   <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
                   {pending && (
                     <Text style={[styles.buttonHint, { color: t.onPrimary }]}>
-                      Les autres seront prévenus dans {remaining} s · appuie pour annuler
+                      Confirmation automatique dans {remaining} s · appuie pour annuler
                     </Text>
                   )}
                 </>

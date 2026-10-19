@@ -8,9 +8,9 @@ import { HAPTIC_PATTERNS } from './haptic-patterns';
 
 const SOUNDS = {
   sortie: require('../assets/sounds/miaou_sortie.wav'),
-  rentree: require('../assets/sounds/miaou_rentree.wav'),
   bagarre: require('../assets/sounds/bagarre.wav'),
 };
+const SOUND_OF = { rentree: 'sortie' }; // la rentrée utilise le même miaulement que la sortie
 const STYLES = { 1: Haptics.ImpactFeedbackStyle.Light, 2: Haptics.ImpactFeedbackStyle.Medium, 3: Haptics.ImpactFeedbackStyle.Heavy };
 const AUDIO_LATENCY = 40; // ms : le son démarre un peu après l'appel à play()
 
@@ -58,7 +58,8 @@ function playSound(player) {
   });
 }
 
-export function playFeedback(name) {
+export function playFeedback(event) {
+  const name = SOUND_OF[event] ?? event;
   timers.forEach(clearTimeout);
   timers = [];
   preloadFeedback()

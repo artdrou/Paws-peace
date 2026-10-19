@@ -64,10 +64,11 @@ export async function setupChannels() {
     sound: 'miaou_sortie.wav',
     vibrationPattern: [0, 250],
   });
-  await Notifications.setNotificationChannelAsync('rentree', {
+  // même miaulement que la sortie ; nouvel identifiant car le son d'un canal ne change plus
+  await Notifications.setNotificationChannelAsync('rentree_miaou', {
     name: 'Rentrées',
     importance: Notifications.AndroidImportance.HIGH,
-    sound: 'miaou_rentree.wav',
+    sound: 'miaou_sortie.wav',
     vibrationPattern: [0, 250],
   });
   await Notifications.setNotificationChannelAsync('baston', {
@@ -80,6 +81,7 @@ export async function setupChannels() {
   // anciens canaux (sans sons perso)
   await Notifications.deleteNotificationChannelAsync('moves').catch(() => {});
   await Notifications.deleteNotificationChannelAsync('alert').catch(() => {});
+  await Notifications.deleteNotificationChannelAsync('rentree').catch(() => {});
 }
 
 export async function registerForPush(cat) {

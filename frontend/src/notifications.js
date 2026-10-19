@@ -105,3 +105,9 @@ export async function registerForPush(cat) {
   }
   return token;
 }
+
+// Appelle cb à chaque notif reçue quand l'app est ouverte ; renvoie la fonction de désabonnement
+export function onNotificationReceived(cb) {
+  const sub = Notifications.addNotificationReceivedListener(cb);
+  return () => sub.remove();
+}

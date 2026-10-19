@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, Image, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Image, Modal, Pressable, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 import { CATS, ALERT, ALERT_SOFT, buttonLabel, sinceLabel } from './src/cats';
@@ -9,6 +9,7 @@ import { setupChannels, registerForPush } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 
 const PAWS = require('./assets/paws.png');
+const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {
   const [cat, setCatState] = useState(undefined); // undefined = chargement, null = pas encore choisi
@@ -141,9 +142,27 @@ export default function App() {
   );
 }
 
-// Papier peint de pattes : une tuile répétée, teintée selon le thème
+// Papier peint de pattes : grille de tuiles couvrant l'écran, teintées selon le thème
+// (resizeMode="repeat" ne répète pas l'image sur Android)
 function Wallpaper({ color }) {
-  return <Image source={PAWS} resizeMode="repeat" style={[StyleSheet.absoluteFill, { tintColor: color }]} />;
+  const { width, height } = useWindowDimensions();
+  const tiles = [];
+  for (let y = 0; y < height + PAWS_TILE; y += PAWS_TILE) {
+    for (let x = 0; x < width; x += PAWS_TILE) {
+      tiles.push(
+        <Image
+          key={`${x}-${y}`}
+          source={PAWS}
+          style={{ position: 'absolute', left: x, top: y, width: PAWS_TILE, height: PAWS_TILE, tintColor: color }}
+        />
+      );
+    }
+  }
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {tiles}
+    </View>
+  );
 }
 
 // Une ligne « tête + nom + pastille dehors/dedans »

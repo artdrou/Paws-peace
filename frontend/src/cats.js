@@ -6,8 +6,8 @@ export const CATS = {
     sorti: 'sortie',
     rentre: 'rentrée',
     head: require('../assets/nara-head.png'),
-    // sauge : gris-jaune-vert
-    theme: { bg: '#F4F5E6', card: '#FFFFFF', soft: '#E7EACB', primary: '#BCC07A', onPrimary: '#33361C', text: '#33361C', muted: '#83866A' },
+    // fond bleu ciel, bouton bleu-gris
+    theme: { bg: '#DCEEFB', card: '#FFFFFF', soft: '#C6E2F6', primary: '#5E7A8F', onPrimary: '#FFFFFF', text: '#1F3442', muted: '#5D7385' },
   },
   leon: {
     key: 'leon',
@@ -16,8 +16,8 @@ export const CATS = {
     sorti: 'sorti',
     rentre: 'rentré',
     head: require('../assets/leon-head.png'),
-    // terracotta rosé
-    theme: { bg: '#FBEDE6', card: '#FFFFFF', soft: '#F3D9CD', primary: '#CF8E78', onPrimary: '#45221A', text: '#45221A', muted: '#9A766A' },
+    // fond orangé, bouton marron
+    theme: { bg: '#FFE4C7', card: '#FFFFFF', soft: '#FBD2A8', primary: '#8A5A3C', onPrimary: '#FFFFFF', text: '#4A2C17', muted: '#9A6E4E' },
   },
 };
 

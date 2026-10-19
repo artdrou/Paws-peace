@@ -42,9 +42,11 @@ export function preloadFeedback() {
 }
 
 function playSound(player) {
-  const start = () => {
-    player.seekTo(0).catch(() => {});
+  // Après une première lecture le lecteur est « terminé » : il faut que le retour
+  // au début soit effectif avant play(), sinon play() ne fait rien.
+  const start = async () => {
     player.volume = 1;
+    await player.seekTo(0).catch(() => {});
     player.play();
   };
   if (player.isLoaded) return start();

@@ -117,9 +117,14 @@ export default function App() {
 
       {error && <Text style={[styles.error, { color: ALERT }]}>{error}</Text>}
 
-      <Pressable onPress={() => choose(null)} style={styles.switch}>
-        <Text style={{ color: t.muted }}>Je ne suis pas avec {me.name} ? Changer de chat</Text>
-      </Pressable>
+      <View style={styles.switch}>
+        <Text style={[styles.switchText, { color: t.muted }]}>Je ne suis pas avec {me.name} ?</Text>
+        <Pressable onPress={() => choose(null)} hitSlop={12}>
+          {({ pressed }) => (
+            <Text style={[styles.switchLink, { color: t.primary, opacity: pressed ? 0.6 : 1 }]}>Changer de chat</Text>
+          )}
+        </Pressable>
+      </View>
 
       <Modal visible={bothOut && !alarmDismissed} transparent animationType="fade">
         <View style={styles.backdrop}>
@@ -231,6 +236,8 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 20, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },
   switch: { marginTop: 32, alignItems: 'center' },
+  switchText: { textAlign: 'center' },
+  switchLink: { marginTop: 4, fontSize: 16, fontWeight: '700', textDecorationLine: 'underline', textAlign: 'center' },
   chooseTitle: { fontSize: 28, fontWeight: '800', color: '#3A3530', marginBottom: 32, textAlign: 'center' },
   chooseButton: {
     height: 104,

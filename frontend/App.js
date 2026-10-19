@@ -24,7 +24,7 @@ import { UpdatePrompt } from './src/UpdatePrompt';
 import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
-const UNDO_DELAY = 10000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
+const UNDO_DELAY = 5000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
 const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {

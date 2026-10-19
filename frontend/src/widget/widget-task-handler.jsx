@@ -4,8 +4,8 @@ import { getStatus, toggle } from '../api';
 import { getCat, getPushToken, getWidgetPending, setWidgetPending } from '../storage';
 
 // Même délai que le bouton de l'app : un second appui pendant ce temps annule.
-// (La tâche Android a 30 s pour finir : 10 s d'attente + l'appel réseau, ça passe.)
-const UNDO_DELAY = 10000;
+// (La tâche Android a 30 s pour finir : 5 s d'attente + l'appel réseau, ça passe.)
+const UNDO_DELAY = 5000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Appelé par Android (sans ouvrir l'app) quand le widget est ajouté, mis à jour ou cliqué.

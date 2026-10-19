@@ -64,7 +64,7 @@ export function CatWidget({ myCat, status, error, busy, pending }) {
         }}
       >
         <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? ALERT : t.onPrimary }} />
-        {pending && <TextWidget text="Notif dans 10 s · appuie pour annuler" style={{ fontSize: 11, color: both ? ALERT : t.onPrimary }} />}
+        {pending && <TextWidget text="Notif dans 5 s · appuie pour annuler" style={{ fontSize: 11, color: both ? ALERT : t.onPrimary }} />}
       </FlexWidget>
     </FlexWidget>
   );

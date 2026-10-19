@@ -7,6 +7,7 @@ import { getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
+import { UpdatePrompt } from './src/UpdatePrompt';
 
 const PAWS = require('./assets/paws.png');
 const PAWS_TILE = 360; // taille de la tuile en dp
@@ -143,6 +144,8 @@ export default function App() {
           </View>
         </View>
       </Modal>
+
+      <UpdatePrompt color={t.primary} onColor={t.onPrimary} textColor={t.text} />
     </View>
   );
 }
@@ -207,6 +210,8 @@ function ChooseScreen({ onChoose }) {
           <Text style={[styles.chooseText, { color: c.theme.onPrimary }]}>{c.name}</Text>
         </Pressable>
       ))}
+
+      <UpdatePrompt color="#3A3530" onColor="#FFFFFF" textColor="#3A3530" />
     </View>
   );
 }

@@ -89,7 +89,7 @@ export default function App() {
         {status ? (
           <>
             <CatRow c={other} state={theirs} t={t} size={72} big />
-            <View style={[styles.sep, { backgroundColor: t.accent }]} />
+            <View style={[styles.sep, { backgroundColor: t.soft }]} />
             <CatRow c={me} state={mine} t={t} size={44} />
           </>
         ) : (
@@ -109,7 +109,7 @@ export default function App() {
           <ActivityIndicator color={t.onPrimary} />
         ) : (
           <>
-            <Head c={me} size={48} style={styles.buttonHead} />
+            <Image source={me.head} style={styles.buttonHead} />
             <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
           </>
         )}
@@ -170,29 +170,15 @@ function Wallpaper({ color }) {
   );
 }
 
-// Tête du chat posée sur un disque de sa couleur d'accent
-function Head({ c, size, style }) {
-  return (
-    <View
-      style={[
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: c.theme.accent, alignItems: 'center', justifyContent: 'center' },
-        style,
-      ]}
-    >
-      <Image source={c.head} style={{ width: size * 0.84, height: size * 0.84 }} />
-    </View>
-  );
-}
-
 // Une ligne « tête + nom + pastille dehors/dedans »
 function CatRow({ c, state, t, size, big }) {
   const out = !!state?.outside;
   return (
     <View style={styles.row}>
-      <Head c={c} size={size} />
+      <Image source={c.head} style={{ width: size, height: size }} />
       <View style={styles.rowText}>
         <Text style={[big ? styles.big : styles.medium, { color: t.text }]}>{c.name}</Text>
-        <View style={[styles.pill, { backgroundColor: out ? ALERT_SOFT : c.theme.accent }]}>
+        <View style={[styles.pill, { backgroundColor: out ? ALERT_SOFT : t.soft }]}>
           <Text style={[styles.pillText, { color: out ? ALERT : t.text }]}>
             {out ? `Dehors · ${sinceLabel(state.updatedAt)}` : "À l'intérieur"}
           </Text>
@@ -217,7 +203,7 @@ function ChooseScreen({ onChoose }) {
             { backgroundColor: c.theme.primary, transform: [{ scale: pressed ? 0.98 : 1 }] },
           ]}
         >
-          <Head c={c} size={72} style={styles.chooseHead} />
+          <Image source={c.head} style={styles.chooseHead} />
           <Text style={[styles.chooseText, { color: c.theme.onPrimary }]}>{c.name}</Text>
         </Pressable>
       ))}
@@ -236,7 +222,7 @@ const styles = StyleSheet.create({
   medium: { fontSize: 18, fontWeight: '700' },
   pill: { marginTop: 6, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 },
   pillText: { fontSize: 14, fontWeight: '600' },
-  sep: { height: 3, borderRadius: 2, marginVertical: 20 },
+  sep: { height: 2, borderRadius: 1, marginVertical: 20 },
   button: {
     marginTop: 24,
     height: 80,
@@ -246,7 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadow,
   },
-  buttonHead: { marginRight: 12 },
+  buttonHead: { width: 44, height: 44, marginRight: 12 },
   buttonText: { fontSize: 20, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },
   switch: { marginTop: 32, alignItems: 'center' },
@@ -262,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     ...shadow,
   },
-  chooseHead: { marginRight: 16 },
+  chooseHead: { width: 64, height: 64, marginRight: 16 },
   chooseText: { fontSize: 28, fontWeight: '800' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
   alarm: { backgroundColor: ALERT, borderRadius: 28, padding: 28, alignItems: 'center' },

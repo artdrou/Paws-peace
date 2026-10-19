@@ -43,3 +43,10 @@ export function sinceLabel(iso) {
   const today = new Date().toDateString() === d.toDateString();
   return today ? `depuis ${hh}h${mm}` : `depuis le ${d.getDate()}/${d.getMonth() + 1} à ${hh}h${mm}`;
 }
+
+// Assombrit une couleur #RRGGBB (amount entre 0 et 1)
+export function darken(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (c) => Math.round(c * (1 - amount)).toString(16).padStart(2, '0');
+  return `#${f(n >> 16)}${f((n >> 8) & 255)}${f(n & 255)}`;
+}

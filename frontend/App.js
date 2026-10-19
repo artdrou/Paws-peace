@@ -1,8 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, Image, Modal, Pressable, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  AppState,
+  Easing,
+  Image,
+  Modal,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel } from './src/cats';
+import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel, darken } from './src/cats';
 import { getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush } from './src/notifications';
@@ -10,6 +23,7 @@ import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
 
 const PAWS = require('./assets/paws.png');
+const UNDO_DELAY = 10000; // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
 const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {
@@ -52,7 +66,40 @@ export default function App() {
     if (!bothOut) setAlarmDismissed(false);
   }, [bothOut]);
 
+  // Appui sur le bouton : on attend UNDO_DELAY (barre qui se remplit) avant d'envoyer.
+  // Un second appui pendant ce temps annule ; si l'app passe en arrière-plan, on envoie tout de suite.
+  const [pending, setPending] = useState(false);
+  const progress = useRef(new Animated.Value(0)).current;
+  const commitRef = useRef(null);
+
+  const cancelPending = () => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    setPending(false);
+  };
+
+  commitRef.current = () => {
+    cancelPending();
+    onToggle();
+  };
+
+  const onPress = () => {
+    if (pending) return cancelPending();
+    setPending(true);
+    progress.setValue(0);
+    Animated.timing(progress, { toValue: 1, duration: UNDO_DELAY, easing: Easing.linear, useNativeDriver: false }).start(
+      ({ finished }) => finished && commitRef.current()
+    );
+  };
+
+  useEffect(() => {
+    if (!pending) return;
+    const sub = AppState.addEventListener('change', (s) => s !== 'active' && commitRef.current());
+    return () => sub.remove();
+  }, [pending]);
+
   const choose = async (c) => {
+    cancelPending();
     await setCat(c);
     setCatState(c);
     refreshWidgets().catch(() => {});
@@ -80,6 +127,9 @@ export default function App() {
   const t = me.theme;
   const mine = status?.[cat];
   const theirs = status?.[me.other];
+  // pendant le délai, le bouton prend déjà la couleur du nouvel état
+  const showOutside = pending ? !mine?.outside : mine?.outside;
+  const buttonColor = showOutside ? OUT_BUTTON : t.primary;
 
   return (
     <View style={[styles.screen, { backgroundColor: t.bg }]}>
@@ -99,19 +149,31 @@ export default function App() {
       </View>
 
       <Pressable
-        onPress={onToggle}
+        onPress={onPress}
         disabled={busy || !status}
         style={({ pressed }) => [
           styles.button,
-          { backgroundColor: mine?.outside ? OUT_BUTTON : t.primary, opacity: busy || !status ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+          { backgroundColor: buttonColor, opacity: busy || !status ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         ]}
       >
+        {pending && (
+          <Animated.View
+            style={[
+              styles.buttonProgress,
+              {
+                backgroundColor: darken(buttonColor, 0.15),
+                width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+              },
+            ]}
+          />
+        )}
         {busy ? (
           <ActivityIndicator color={t.onPrimary} />
         ) : (
           <>
             <Image source={me.head} style={styles.buttonHead} />
             <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
+            {pending && <Text style={[styles.buttonHint, { color: t.onPrimary }]}>Appuie pour annuler</Text>}
           </>
         )}
       </Pressable>
@@ -234,8 +296,11 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     ...shadow,
   },
+  buttonProgress: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.8 },
   buttonHead: { width: 72, height: 72, marginBottom: 10 },
   buttonText: { fontSize: 22, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },

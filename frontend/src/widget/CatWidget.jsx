@@ -4,7 +4,7 @@ import { CATS, ALERT, OUT_BUTTON, statusLine, buttonLabel } from '../cats';
 
 const FULL = { height: 'match_parent', width: 'match_parent' };
 
-export function CatWidget({ myCat, status, error, busy }) {
+export function CatWidget({ myCat, status, error, busy, pending }) {
   if (!myCat) {
     return (
       <FlexWidget
@@ -32,6 +32,8 @@ export function CatWidget({ myCat, status, error, busy }) {
 
   const subtitle = status ? statusLine(myCat, mine) : ' ';
   const label = busy ? '…' : status ? buttonLabel(myCat, mine) : 'Réessayer';
+  // pendant le délai d'annulation, le bouton prend déjà la couleur du nouvel état
+  const showOutside = pending ? !mine : mine;
 
   return (
     <FlexWidget
@@ -55,13 +57,14 @@ export function CatWidget({ myCat, status, error, busy }) {
           width: 'match_parent',
           height: 48,
           marginTop: 8,
-          backgroundColor: both ? '#FFFFFF' : mine ? OUT_BUTTON : t.primary,
+          backgroundColor: both ? '#FFFFFF' : showOutside ? OUT_BUTTON : t.primary,
           borderRadius: 14,
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
         <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? ALERT : t.onPrimary }} />
+        {pending && <TextWidget text="Appuie pour annuler" style={{ fontSize: 11, color: both ? ALERT : t.onPrimary }} />}
       </FlexWidget>
     </FlexWidget>
   );

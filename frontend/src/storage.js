@@ -8,3 +8,9 @@ export const setCat = (cat) => (cat ? AsyncStorage.setItem(CAT_KEY, cat) : Async
 
 export const getPushToken = () => AsyncStorage.getItem(TOKEN_KEY);
 export const setPushToken = (t) => AsyncStorage.setItem(TOKEN_KEY, t);
+
+// Appui du widget en attente d'envoi (horodatage), pour pouvoir l'annuler
+const WIDGET_PENDING_KEY = 'widgetPending';
+export const getWidgetPending = () => AsyncStorage.getItem(WIDGET_PENDING_KEY);
+export const setWidgetPending = (id) =>
+  id ? AsyncStorage.setItem(WIDGET_PENDING_KEY, id) : AsyncStorage.removeItem(WIDGET_PENDING_KEY);

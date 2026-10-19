@@ -32,17 +32,32 @@ Notifications.setNotificationHandler({
   },
 });
 
+// Sur Android le son est porté par le canal, et un canal ne peut plus être modifié
+// une fois créé : un canal par son. Les fichiers sont embarqués via le plugin
+// expo-notifications (app.json).
 export async function setupChannels() {
-  await Notifications.setNotificationChannelAsync('moves', {
-    name: 'Sorties et rentrées',
-    importance: Notifications.AndroidImportance.DEFAULT,
+  await Notifications.setNotificationChannelAsync('sortie', {
+    name: 'Sorties',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'miaou_sortie.wav',
+    vibrationPattern: [0, 250],
   });
-  await Notifications.setNotificationChannelAsync('alert', {
+  await Notifications.setNotificationChannelAsync('rentree', {
+    name: 'Rentrées',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'miaou_rentree.wav',
+    vibrationPattern: [0, 250],
+  });
+  await Notifications.setNotificationChannelAsync('baston', {
     name: 'Alerte bagarre',
     importance: Notifications.AndroidImportance.MAX,
+    sound: 'bagarre.wav',
     vibrationPattern: [0, 600, 250, 600, 250, 600],
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   });
+  // anciens canaux (sans sons perso)
+  await Notifications.deleteNotificationChannelAsync('moves').catch(() => {});
+  await Notifications.deleteNotificationChannelAsync('alert').catch(() => {});
 }
 
 export async function registerForPush(cat) {

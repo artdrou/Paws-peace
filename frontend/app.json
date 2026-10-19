@@ -9,10 +9,22 @@
       "package": "com.pawspeace.app",
       "runtimeVersion": {
         "policy": "fingerprint"
-      }
+      },
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/miaou_sortie.wav",
+            "./assets/sounds/miaou_rentree.wav",
+            "./assets/sounds/bagarre.wav"
+          ]
+        }
+      ],
       [
         "react-native-android-widget",
         {

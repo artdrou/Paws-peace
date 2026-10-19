@@ -95,9 +95,9 @@ async function notify(cat, outside, status, senderToken) {
     for (const to of all) {
       messages.push({
         to,
-        channelId: 'alert',
+        channelId: 'baston',
         priority: 'high',
-        sound: 'default',
+        sound: 'bagarre.wav',
         title: '⚠️ Les deux chats sont dehors !',
         body: `${c.name} vient de sortir alors que ${o.name} est déjà dehors.`,
         data: { type: 'alert', cat, outside },
@@ -107,8 +107,11 @@ async function notify(cat, outside, status, senderToken) {
     // Notif normale : à tout le monde sauf celui qui a appuyé
     const title = outside ? `🐈 ${c.name} est ${c.sorti}` : `🏠 ${c.name} est ${c.rentre}`;
     const body = otherOutside ? `${o.name} est dehors en ce moment.` : `${o.name} est à l'intérieur.`;
+    // canal Android (et donc son) selon sortie/rentrée, voir setupChannels côté app
+    const channelId = outside ? 'sortie' : 'rentree';
+    const sound = outside ? 'miaou_sortie.wav' : 'miaou_rentree.wav';
     for (const to of others) {
-      messages.push({ to, channelId: 'moves', priority: 'high', title, body, data: { type: 'move', cat, outside } });
+      messages.push({ to, channelId, sound, priority: 'high', title, body, data: { type: 'move', cat, outside } });
     }
   }
 

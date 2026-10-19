@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   error: { marginTop: 16, textAlign: 'center' },
   switch: { marginTop: 32, alignItems: 'center' },
   switchText: { textAlign: 'center' },
-  switchLink: { marginTop: 4, fontSize: 16, fontWeight: '700', textDecorationLine: 'underline', textAlign: 'center' },
+  switchLink: { marginTop: 4, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   chooseTitle: { fontSize: 28, fontWeight: '800', color: '#3A3530', marginBottom: 32, textAlign: 'center' },
   chooseButton: {
     height: 104,

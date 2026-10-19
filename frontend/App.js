@@ -27,6 +27,13 @@ import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
 const GEAR = require('./assets/gear.png');
+// icônes des pastilles de statut (largeur / hauteur d'origine : 56x40 et 60x40)
+const STATUS_ICON = {
+  in: { source: require('./assets/statut-interieur.png'), ratio: 56 / 40 },
+  out: { source: require('./assets/statut-exterieur.png'), ratio: 60 / 40 },
+};
+const PILL_ICON = 20; // hauteur de l'icône dans la pastille
+const HEAD_SIZE = 60; // têtes des deux chats à la même taille dans la carte de statut
 const DOOR = { sort: require('./assets/porte-sort.png'), rentre: require('./assets/porte-rentre.png') };
 const SHEEN = require('./assets/button-sheen.png'); // voile dégradé qui pulse sur le gros bouton
 const BUTTON_DEPTH = 6; // relief du gros bouton : hauteur du socle visible sous la face
@@ -220,9 +227,9 @@ export default function App() {
       <View style={[styles.card, { backgroundColor: t.card }]}>
         {status ? (
           <>
-            <CatRow c={other} state={theirs} t={t} size={72} big />
+            <CatRow c={other} state={theirs} t={t} big />
             <View style={[styles.sep, { backgroundColor: t.soft }]} />
-            <CatRow c={me} state={mine} t={t} size={44} />
+            <CatRow c={me} state={mine} t={t} />
           </>
         ) : (
           <ActivityIndicator color={t.link} />
@@ -287,7 +294,7 @@ export default function App() {
       {error && <Text style={[styles.error, { color: COLORS.alert }]}>{error}</Text>}
 
       <View style={styles.switch}>
-        <Text style={[styles.switchText, { color: t.muted }]}>Je ne suis pas avec {me.name} ?</Text>
+        <Text style={[styles.switchText, { color: t.muted }]}>{me.name} n'est pas mon chat</Text>
         <Pressable onPress={() => choose(null)} hitSlop={12}>
           {({ pressed }) => (
             <Text style={[styles.switchLink, { color: t.link, opacity: pressed ? 0.6 : 1 }]}>Changer de chat</Text>
@@ -342,15 +349,18 @@ function Wallpaper({ color }) {
 }
 
 // Une ligne « tête + nom + pastille dehors/dedans »
-function CatRow({ c, state, t, size, big }) {
+function CatRow({ c, state, t, big }) {
   const out = !!state?.outside;
+  const icon = out ? STATUS_ICON.out : STATUS_ICON.in;
+  const fg = out ? COLORS.alert : t.text;
   return (
     <View style={styles.row}>
-      <Image source={c.head} style={{ width: size, height: size }} />
+      <Image source={c.head} style={{ width: HEAD_SIZE, height: HEAD_SIZE }} />
       <View style={styles.rowText}>
         <Text style={[big ? styles.big : styles.medium, { color: t.text }]}>{c.name}</Text>
         <View style={[styles.pill, { backgroundColor: out ? COLORS.alertSoft : t.soft }]}>
-          <Text style={[styles.pillText, { color: out ? COLORS.alert : t.text }]}>
+          <Image source={icon.source} style={[styles.pillIcon, { width: PILL_ICON * icon.ratio, tintColor: fg }]} />
+          <Text style={[styles.pillText, { color: fg }]}>
             {out ? `Dehors · ${sinceLabel(state.updatedAt)}` : "À l'intérieur"}
           </Text>
         </View>
@@ -395,8 +405,17 @@ const styles = StyleSheet.create({
   rowText: { marginLeft: 16, flex: 1, alignItems: 'flex-start' },
   big: { fontSize: 26, fontWeight: '800' },
   medium: { fontSize: 18, fontWeight: '700' },
-  pill: { marginTop: 6, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 },
-  pillText: { fontSize: 14, fontWeight: '600' },
+  pill: {
+    marginTop: 8,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center', // icône et texte centrés verticalement
+    justifyContent: 'center', // et centrés ensemble dans la pastille
+  },
+  pillIcon: { height: PILL_ICON, marginRight: 8 },
+  pillText: { fontSize: 16, fontWeight: '700' },
   sep: { height: 2, borderRadius: 1, marginVertical: 20 },
   buttonBase: { marginTop: 24, borderRadius: 32, paddingBottom: BUTTON_DEPTH, ...shadow },
   button: {

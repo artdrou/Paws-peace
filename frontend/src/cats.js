@@ -5,8 +5,6 @@ export const CATS = {
     key: 'nara',
     name: 'Nara',
     other: 'leon',
-    sorti: 'sortie',
-    rentre: 'rentrée',
     head: require('../assets/nara-head.png'),
     theme: THEMES.nara,
   },
@@ -14,8 +12,6 @@ export const CATS = {
     key: 'leon',
     name: 'Léon',
     other: 'nara',
-    sorti: 'sorti',
-    rentre: 'rentré',
     head: require('../assets/leon-head.png'),
     theme: THEMES.leon,
   },
@@ -28,7 +24,7 @@ export function statusLine(catKey, outside) {
 
 export function buttonLabel(catKey, outside) {
   const c = CATS[catKey];
-  return outside ? `${c.name} est ${c.rentre}` : `${c.name} est ${c.sorti}`;
+  return outside ? `${c.name} rentre` : `${c.name} sort`; // verbe d'action : c'est un bouton
 }
 
 export function sinceLabel(iso) {

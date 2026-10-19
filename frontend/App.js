@@ -27,6 +27,9 @@ import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
 const GEAR = require('./assets/gear.png');
+const DOOR = { sort: require('./assets/porte-sort.png'), rentre: require('./assets/porte-rentre.png') };
+const SHEEN = require('./assets/button-sheen.png'); // voile dégradé qui pulse sur le gros bouton
+const BUTTON_DEPTH = 6; // relief du gros bouton : hauteur du socle visible sous la face
 const UNDO_DELAY = 5000; // délai avant l'envoi des notifs, pour pouvoir annuler un appui par erreur
 const PAWS_TILE = 360; // taille de la tuile en dp
 
@@ -79,6 +82,15 @@ export default function App() {
   const [pending, setPending] = useState(false);
   const [remaining, setRemaining] = useState(0); // secondes avant l'envoi, pour le compte à rebours
   const progress = useRef(new Animated.Value(0)).current;
+
+  // Pulsation très douce du voile dégradé sur le gros bouton, pour montrer qu'il est cliquable
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const step = (toValue) => Animated.timing(pulse, { toValue, duration: 1800, easing: Easing.inOut(Easing.ease), useNativeDriver: true });
+    const loop = Animated.loop(Animated.sequence([step(1), step(0)]));
+    loop.start();
+    return () => loop.stop();
+  }, []);
   const pendingRef = useRef(false);
   const requestRef = useRef(null); // requête /toggle de l'appui en cours
   const resultRef = useRef(null); // état renvoyé par le serveur, affiché à la fin du délai
@@ -217,37 +229,49 @@ export default function App() {
         )}
       </View>
 
-      <Pressable
-        onPress={onPress}
-        disabled={busy || !status}
-        style={({ pressed }) => [
-          styles.button,
-          { backgroundColor: buttonColor, opacity: busy || !status ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        ]}
-      >
-        {pending && (
-          <Animated.View
-            style={[
-              styles.buttonProgress,
-              {
-                backgroundColor: darken(buttonColor, 0.15),
-                width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-              },
-            ]}
-          />
-        )}
-        {busy ? (
-          <ActivityIndicator color={t.onPrimary} />
-        ) : (
-          <>
-            <Image source={me.head} style={styles.buttonHead} />
-            <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
-            {pending && (
-              <Text style={[styles.buttonHint, { color: t.onPrimary }]}>
-                Les autres seront prévenus dans {remaining} s · appuie pour annuler
-              </Text>
-            )}
-          </>
+      {/* Bouton en relief : socle plus foncé dessous, la face s'enfonce à l'appui */}
+      <Pressable onPress={onPress} disabled={busy || !status}>
+        {({ pressed }) => (
+          <View style={[styles.buttonBase, { backgroundColor: darken(buttonColor, 0.25), opacity: busy || !status ? 0.6 : 1 }]}>
+            <View
+              style={[
+                styles.button,
+                { backgroundColor: buttonColor, transform: [{ translateY: pressed ? BUTTON_DEPTH - 1 : 0 }] },
+              ]}
+            >
+              {!pending && (
+                <Animated.Image
+                  source={SHEEN}
+                  resizeMode="stretch"
+                  style={[styles.buttonSheen, { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.05, 0.3] }) }]}
+                />
+              )}
+              {pending && (
+                <Animated.View
+                  style={[
+                    styles.buttonProgress,
+                    {
+                      backgroundColor: darken(buttonColor, 0.15),
+                      width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+                    },
+                  ]}
+                />
+              )}
+              {busy ? (
+                <ActivityIndicator color={t.onPrimary} />
+              ) : (
+                <>
+                  <Image source={mine?.outside ? DOOR.rentre : DOOR.sort} style={[styles.buttonIcon, { tintColor: t.onPrimary }]} />
+                  <Text style={[styles.buttonText, { color: t.onPrimary }]}>{status ? buttonLabel(cat, mine?.outside) : '…'}</Text>
+                  {pending && (
+                    <Text style={[styles.buttonHint, { color: t.onPrimary }]}>
+                      Les autres seront prévenus dans {remaining} s · appuie pour annuler
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+          </View>
         )}
       </Pressable>
 
@@ -374,18 +398,18 @@ const styles = StyleSheet.create({
   pill: { marginTop: 6, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 12 },
   pillText: { fontSize: 14, fontWeight: '600' },
   sep: { height: 2, borderRadius: 1, marginVertical: 20 },
+  buttonBase: { marginTop: 24, borderRadius: 32, paddingBottom: BUTTON_DEPTH, ...shadow },
   button: {
-    marginTop: 24,
     height: 160,
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    ...shadow,
   },
+  buttonSheen: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   buttonProgress: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   buttonHint: { fontSize: 13, fontWeight: '600', marginTop: 4, opacity: 0.85, textAlign: 'center', paddingHorizontal: 16 },
-  buttonHead: { width: 72, height: 72, marginBottom: 10 },
+  buttonIcon: { width: 96, height: 60, marginBottom: 10 },
   buttonText: { fontSize: 22, fontWeight: '800' },
   confirm: {
     marginTop: 12,

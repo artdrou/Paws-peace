@@ -2,6 +2,7 @@ import { Asset } from 'expo-asset';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { HAPTIC_PATTERNS } from './haptic-patterns';
+import { getSettings, loadSettings } from './settings';
 
 // Son + vibration calée sur l'enveloppe du son, joués dans l'app
 // (les notifs ont leurs propres sons via les canaux Android).
@@ -23,6 +24,7 @@ let timers = [];
 // Pas fait à l'import, car ce module est aussi chargé par la tâche du widget.
 export function preloadFeedback() {
   loading ??= (async () => {
+    await loadSettings();
     // playsInSilentMode : sinon expo-audio ignore play() quand le téléphone est en vibreur/silencieux.
     // duckOthers : baisse la musique en cours au lieu de la couper.
     await setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'duckOthers' }).catch(() => {});
@@ -55,13 +57,18 @@ function playSound(uri) {
   player.play();
 }
 
+// Son et vibration selon les réglages (page Réglages)
 export function playFeedback(event) {
   const name = SOUND_OF[event] ?? event;
+  const { sound, haptics } = getSettings();
   timers.forEach(clearTimeout);
   timers = [];
-  preloadFeedback()
-    .then(() => uris[name] && playSound(uris[name]))
-    .catch((e) => console.warn(`[son] lecture de ${name} impossible`, e));
+  if (sound) {
+    preloadFeedback()
+      .then(() => uris[name] && playSound(uris[name]))
+      .catch((e) => console.warn(`[son] lecture de ${name} impossible`, e));
+  }
+  if (!haptics) return;
   timers = HAPTIC_PATTERNS[name].map(([t, level]) =>
     setTimeout(() => Haptics.impactAsync(STYLES[level]).catch(() => {}), t + AUDIO_LATENCY)
   );

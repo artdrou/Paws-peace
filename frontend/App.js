@@ -15,17 +15,19 @@ import {
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { CATS, ALERT, ALERT_SOFT, OUT_BUTTON, buttonLabel, sinceLabel, darken } from './src/cats';
+import { CATS, buttonLabel, sinceLabel } from './src/cats';
+import { COLORS, darken } from './src/theme';
 import { confirm, getStatus, toggle } from './src/api';
 import { getCat, setCat, getPushToken } from './src/storage';
 import { setupChannels, registerForPush, collapseNotifications } from './src/notifications';
 import { refreshWidgets } from './src/widget/refresh';
 import { UpdatePrompt } from './src/UpdatePrompt';
+import { SettingsScreen } from './src/SettingsScreen';
 import { playFeedback, preloadFeedback } from './src/feedback';
 
 const PAWS = require('./assets/paws.png');
-const UNDO_DELAY = 5000;
-const CONFIRM = '#A3E635'; // vert lime du bouton « Confirmer » // délai avant d'envoyer, pour pouvoir annuler un appui par erreur
+const GEAR = require('./assets/gear.png');
+const UNDO_DELAY = 5000; // délai avant l'envoi des notifs, pour pouvoir annuler un appui par erreur
 const PAWS_TILE = 360; // taille de la tuile en dp
 
 export default function App() {
@@ -34,6 +36,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [alarmDismissed, setAlarmDismissed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const closeSettings = useCallback(() => setShowSettings(false), []);
 
   useEffect(() => {
     setupChannels().catch(() => {});
@@ -188,12 +192,18 @@ export default function App() {
   const theirs = status?.[me.other];
   // pendant le délai, le bouton prend déjà la couleur du nouvel état
   const showOutside = pending ? !mine?.outside : mine?.outside;
-  const buttonColor = showOutside ? OUT_BUTTON : t.primary;
+  const buttonColor = showOutside ? COLORS.outButton : t.primary;
+
+  if (showSettings) return <SettingsScreen t={t} onClose={closeSettings} wallpaper={<Wallpaper color={t.soft} />} />;
 
   return (
     <View style={[styles.screen, { backgroundColor: t.bg }]}>
       <StatusBar barStyle="dark-content" backgroundColor={t.bg} />
       <Wallpaper color={t.soft} />
+
+      <Pressable onPress={() => setShowSettings(true)} hitSlop={16} style={styles.gear}>
+        {({ pressed }) => <Image source={GEAR} style={[styles.gearIcon, { tintColor: t.link, opacity: pressed ? 0.6 : 1 }]} />}
+      </Pressable>
 
       <View style={[styles.card, { backgroundColor: t.card }]}>
         {status ? (
@@ -250,7 +260,7 @@ export default function App() {
         </Pressable>
       )}
 
-      {error && <Text style={[styles.error, { color: ALERT }]}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: COLORS.alert }]}>{error}</Text>}
 
       <View style={styles.switch}>
         <Text style={[styles.switchText, { color: t.muted }]}>Je ne suis pas avec {me.name} ?</Text>
@@ -315,8 +325,8 @@ function CatRow({ c, state, t, size, big }) {
       <Image source={c.head} style={{ width: size, height: size }} />
       <View style={styles.rowText}>
         <Text style={[big ? styles.big : styles.medium, { color: t.text }]}>{c.name}</Text>
-        <View style={[styles.pill, { backgroundColor: out ? ALERT_SOFT : t.soft }]}>
-          <Text style={[styles.pillText, { color: out ? ALERT : t.text }]}>
+        <View style={[styles.pill, { backgroundColor: out ? COLORS.alertSoft : t.soft }]}>
+          <Text style={[styles.pillText, { color: out ? COLORS.alert : t.text }]}>
             {out ? `Dehors · ${sinceLabel(state.updatedAt)}` : "À l'intérieur"}
           </Text>
         </View>
@@ -327,9 +337,9 @@ function CatRow({ c, state, t, size, big }) {
 
 function ChooseScreen({ onChoose }) {
   return (
-    <View style={[styles.screen, { backgroundColor: '#FAF7F2' }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAF7F2" />
-      <Wallpaper color="#EFE6DA" />
+    <View style={[styles.screen, { backgroundColor: COLORS.neutral.bg }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.neutral.bg} />
+      <Wallpaper color={COLORS.neutral.soft} />
       <Text style={styles.chooseTitle}>Quel est ton chat ?</Text>
       {Object.values(CATS).map((c) => (
         <Pressable
@@ -345,15 +355,17 @@ function ChooseScreen({ onChoose }) {
         </Pressable>
       ))}
 
-      <UpdatePrompt color="#3A3530" onColor="#FFFFFF" textColor="#3A3530" />
+      <UpdatePrompt color={COLORS.neutral.text} onColor={COLORS.neutral.onText} textColor={COLORS.neutral.text} />
     </View>
   );
 }
 
-const shadow = { elevation: 3, shadowColor: '#000000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } };
+const shadow = { elevation: 3, shadowColor: COLORS.shadow, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: 24, paddingTop: 72, justifyContent: 'center' },
+  gear: { position: 'absolute', top: 52, right: 24, zIndex: 1 },
+  gearIcon: { width: 30, height: 30 },
   card: { borderRadius: 28, padding: 24, minHeight: 180, justifyContent: 'center', ...shadow },
   row: { flexDirection: 'row', alignItems: 'center' },
   rowText: { marginLeft: 16, flex: 1, alignItems: 'flex-start' },
@@ -378,18 +390,18 @@ const styles = StyleSheet.create({
   confirm: {
     marginTop: 12,
     alignSelf: 'center',
-    backgroundColor: CONFIRM,
+    backgroundColor: COLORS.confirm,
     borderRadius: 999,
     paddingVertical: 12,
     paddingHorizontal: 32,
     ...shadow,
   },
-  confirmText: { color: '#1A2E05', fontSize: 17, fontWeight: '800' },
+  confirmText: { color: COLORS.onConfirm, fontSize: 17, fontWeight: '800' },
   error: { marginTop: 16, textAlign: 'center' },
   switch: { marginTop: 32, alignItems: 'center' },
   switchText: { textAlign: 'center' },
   switchLink: { marginTop: 4, fontSize: 16, fontWeight: '700', textAlign: 'center' },
-  chooseTitle: { fontSize: 28, fontWeight: '800', color: '#3A3530', marginBottom: 32, textAlign: 'center' },
+  chooseTitle: { fontSize: 28, fontWeight: '800', color: COLORS.neutral.text, marginBottom: 32, textAlign: 'center' },
   chooseButton: {
     height: 104,
     borderRadius: 28,
@@ -401,12 +413,12 @@ const styles = StyleSheet.create({
   },
   chooseHead: { width: 64, height: 64, marginRight: 16 },
   chooseText: { fontSize: 28, fontWeight: '800' },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 24 },
-  alarm: { backgroundColor: ALERT, borderRadius: 28, padding: 28, alignItems: 'center' },
+  backdrop: { flex: 1, backgroundColor: COLORS.backdrop, justifyContent: 'center', padding: 24 },
+  alarm: { backgroundColor: COLORS.alert, borderRadius: 28, padding: 28, alignItems: 'center' },
   alarmHeads: { flexDirection: 'row' },
   alarmHead: { width: 64, height: 64, marginHorizontal: 4 },
-  alarmTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', textAlign: 'center', marginTop: 12 },
-  alarmBody: { color: '#FFFFFF', fontSize: 16, textAlign: 'center', marginTop: 12 },
-  alarmButton: { marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 999, paddingVertical: 14, paddingHorizontal: 28 },
-  alarmButtonText: { color: ALERT, fontSize: 17, fontWeight: '700' },
+  alarmTitle: { color: COLORS.white, fontSize: 24, fontWeight: '800', textAlign: 'center', marginTop: 12 },
+  alarmBody: { color: COLORS.white, fontSize: 16, textAlign: 'center', marginTop: 12 },
+  alarmButton: { marginTop: 24, backgroundColor: COLORS.white, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 28 },
+  alarmButtonText: { color: COLORS.alert, fontSize: 17, fontWeight: '700' },
 });

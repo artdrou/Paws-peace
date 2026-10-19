@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
-import { CATS, ALERT, OUT_BUTTON, statusLine, buttonLabel } from '../cats';
+import { CATS, statusLine, buttonLabel } from '../cats';
+import { COLORS } from '../theme';
 
 const FULL = { height: 'match_parent', width: 'match_parent' };
 
@@ -9,9 +10,9 @@ export function CatWidget({ myCat, status, error, busy, pending }) {
     return (
       <FlexWidget
         clickAction="OPEN_APP"
-        style={{ ...FULL, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12 }}
+        style={{ ...FULL, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 20, padding: 12 }}
       >
-        <TextWidget text="Ouvre l'app pour choisir ton chat" style={{ fontSize: 14, color: '#333333' }} />
+        <TextWidget text="Ouvre l'app pour choisir ton chat" style={{ fontSize: 14, color: COLORS.neutral.text }} />
       </FlexWidget>
     );
   }
@@ -22,8 +23,8 @@ export function CatWidget({ myCat, status, error, busy, pending }) {
   const theirs = status?.[me.other]?.outside;
   const both = !!(mine && theirs);
 
-  const fg = both ? '#FFFFFF' : t.text;
-  const sub = both ? '#FFFFFF' : t.muted;
+  const fg = both ? COLORS.white : t.text;
+  const sub = both ? COLORS.white : t.muted;
 
   let title = '…';
   if (both) title = '⚠️ Les deux chats sont dehors !';
@@ -39,7 +40,7 @@ export function CatWidget({ myCat, status, error, busy, pending }) {
     <FlexWidget
       style={{
         ...FULL,
-        backgroundColor: both ? ALERT : t.bg,
+        backgroundColor: both ? COLORS.alert : t.bg,
         borderRadius: 20,
         padding: 12,
         flexDirection: 'column',
@@ -57,14 +58,14 @@ export function CatWidget({ myCat, status, error, busy, pending }) {
           width: 'match_parent',
           height: 48,
           marginTop: 8,
-          backgroundColor: both ? '#FFFFFF' : showOutside ? OUT_BUTTON : t.primary,
+          backgroundColor: both ? COLORS.white : showOutside ? COLORS.outButton : t.primary,
           borderRadius: 14,
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? ALERT : t.onPrimary }} />
-        {pending && <TextWidget text="Notif dans 5 s · appuie pour annuler" style={{ fontSize: 11, color: both ? ALERT : t.onPrimary }} />}
+        <TextWidget text={label} style={{ fontSize: 15, fontWeight: 'bold', color: both ? COLORS.alert : t.onPrimary }} />
+        {pending && <TextWidget text="Notif dans 5 s · appuie pour annuler" style={{ fontSize: 11, color: both ? COLORS.alert : t.onPrimary }} />}
       </FlexWidget>
     </FlexWidget>
   );

@@ -1,0 +1,73 @@
+# Publie chaque changement du frontend sur les deux plateformes :
+#  - Android : mise à jour OTA (EAS Update, canal "preview")
+#  - iPhone  : web app reconstruite dans backend/public, commitée sur main
+#              (Railway redéploie automatiquement ce commit)
+name: Publier l'app
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**']
+  workflow_dispatch:
+
+concurrency:
+  group: publier-app
+  cancel-in-progress: false
+
+jobs:
+  android-ota:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Publier l'OTA
+        run: eas update --channel preview --environment preview --non-interactive --message "$(git log -1 --pretty=%s)"
+
+  web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: frontend
+
+      - run: npm run build:web
+        working-directory: frontend
+
+      # Le push fait avec GITHUB_TOKEN ne relance pas ce workflow (pas de boucle).
+      - name: Commiter la web app
+        run: |
+          git add backend/public
+          if git diff --cached --quiet; then
+            echo "Web app déjà à jour."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898319+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Web app : build automatique ($(git rev-parse --short HEAD))"
+          git pull --rebase origin main
+          git push origin HEAD:main

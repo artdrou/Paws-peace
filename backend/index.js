@@ -64,6 +64,8 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`);
   await pool.query(`INSERT INTO cats (name) VALUES ('nara'), ('leon') ON CONFLICT DO NOTHING`);
+  // Sortie (updated_at) pour laquelle le rappel « dehors depuis 2 h » est déjà parti
+  await pool.query('ALTER TABLE cats ADD COLUMN IF NOT EXISTS reminded_for TIMESTAMPTZ');
 }
 
 async function getStatus() {
@@ -149,9 +151,12 @@ async function notify(cat, outside, status, senderToken) {
   await sendAll(messages);
 }
 
-async function notifyWeb(payload, senderEndpoint) {
+// onlyCat : n'envoie qu'aux navigateurs de ce chat (son propriétaire)
+async function notifyWeb(payload, senderEndpoint, onlyCat) {
   if (!webPushEnabled) return;
-  const { rows } = await pool.query('SELECT endpoint, subscription FROM web_subs');
+  const { rows } = onlyCat
+    ? await pool.query('SELECT endpoint, subscription FROM web_subs WHERE cat = $1', [onlyCat])
+    : await pool.query('SELECT endpoint, subscription FROM web_subs');
   await Promise.all(
     rows
       .filter((r) => r.endpoint !== senderEndpoint)
@@ -166,6 +171,33 @@ async function notifyWeb(payload, senderEndpoint) {
         })
       )
   );
+}
+
+// Rappel au propriétaire quand son chat est dehors depuis 2 h (au cas où on aurait
+// oublié d'appuyer à la rentrée). Une seule fois par sortie ; l'état est en base
+// pour qu'un redémarrage du serveur ne renvoie pas le rappel.
+const REMINDER_AFTER = '2 hours';
+
+async function checkReminders() {
+  const { rows } = await pool.query(
+    `UPDATE cats SET reminded_for = updated_at
+     WHERE outside AND updated_at < now() - $1::interval AND reminded_for IS DISTINCT FROM updated_at
+     RETURNING name`,
+    [REMINDER_AFTER]
+  );
+  for (const { name: cat } of rows) {
+    const c = CATS[cat];
+    const title = `⏰ ${c.name} est dehors depuis 2 h`;
+    const body = `${c.name} est ${c.rentre} ? Pense à appuyer sur le bouton.`;
+    const { rows: devices } = await pool.query('SELECT push_token FROM devices WHERE cat = $1', [cat]);
+    await sendAll(
+      devices
+        .map((d) => d.push_token)
+        .filter((t) => Expo.isExpoPushToken(t))
+        .map((to) => ({ to, channelId: 'sortie', sound: 'miaou_sortie.wav', priority: 'high', title, body, data: { type: 'reminder', cat } }))
+    );
+    await notifyWeb({ title, body, tag: `reminder-${cat}`, type: 'reminder' }, null, cat);
+  }
 }
 
 // ---------- Routes ----------
@@ -313,7 +345,10 @@ app.use((err, req, res, next) => {
 });
 
 initDb()
-  .then(() => app.listen(PORT, () => console.log(`Serveur prêt sur le port ${PORT}`)))
+  .then(() => {
+    app.listen(PORT, () => console.log(`Serveur prêt sur le port ${PORT}`));
+    setInterval(() => checkReminders().catch((err) => console.error('rappel', err)), 60 * 1000);
+  })
   .catch((err) => {
     console.error('Init DB échouée', err);
     process.exit(1);

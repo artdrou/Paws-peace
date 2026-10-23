@@ -188,7 +188,7 @@ async function checkReminders() {
   for (const { name: cat } of rows) {
     const c = CATS[cat];
     const title = `⏰ ${c.name} est dehors depuis 2 h`;
-    const body = `${c.name} est ${c.rentre} ? Pense à appuyer sur le bouton.`;
+    const body = 'Grosse balade ou oubli ?';
     const { rows: devices } = await pool.query('SELECT push_token FROM devices WHERE cat = $1', [cat]);
     await sendAll(
       devices
